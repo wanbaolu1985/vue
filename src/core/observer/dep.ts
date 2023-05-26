@@ -1,7 +1,8 @@
 import config from '../config'
 import { DebuggerOptions, DebuggerEventExtraInfo } from 'v3'
+import { gLogger } from 'core/util/loggerImpl2';
 
-let uid = 0
+export let uid = 0
 
 const pendingCleanupDeps: Dep[] = []
 
@@ -41,6 +42,7 @@ export default class Dep {
   }
 
   addSub(sub: DepTarget) {
+    gLogger.debug(`[Dep|${this.id}::addSub] watchId=${sub.id}`);
     this.subs.push(sub)
   }
 
@@ -79,6 +81,7 @@ export default class Dep {
     }
     for (let i = 0, l = subs.length; i < l; i++) {
       const sub = subs[i]
+      gLogger.debug(`[Dep|${this.id}::notify|${info?.key}-${info?.type}] about to notify watch(${sub.id}) to update`);
       if (__DEV__ && info) {
         sub.onTrigger &&
           sub.onTrigger({
@@ -97,12 +100,14 @@ export default class Dep {
 Dep.target = null
 const targetStack: Array<DepTarget | null | undefined> = []
 
-export function pushTarget(target?: DepTarget | null) {
+export function pushTarget(target?: DepTarget | null, reason?: string) {
   targetStack.push(target)
+  gLogger.debug(`[pushTarget|${reason}] watchId: ${Dep.target?.id} -> ${target?.id}`);
   Dep.target = target
 }
 
-export function popTarget() {
+export function popTarget(reason?: string) {
   targetStack.pop()
+  gLogger.debug(`[popTarget|${reason}] watchId: ${Dep.target?.id} -> ${targetStack[targetStack.length - 1]?.id}`);
   Dep.target = targetStack[targetStack.length - 1]
 }

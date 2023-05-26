@@ -10,6 +10,7 @@ import { extend, mergeOptions, formatComponentName } from '../util/index'
 import type { Component } from 'types/component'
 import type { InternalComponentOptions } from 'types/options'
 import { EffectScope } from 'v3/reactivity/effectScope'
+import { Logger } from 'core/util/loggerImpl2';
 
 let uid = 0
 
@@ -18,6 +19,7 @@ export function initMixin(Vue: typeof Component) {
     const vm: Component = this
     // a uid
     vm._uid = uid++
+    vm._logger = new Logger({ firstTag: `${((vm.constructor as any)?.logger as Logger)?.firstTag || options?.name}|${vm._uid}` }, (vm.constructor as any).logger);
 
     let startTag, endTag
     /* istanbul ignore if */
@@ -98,6 +100,7 @@ export function initInternalComponent(
     opts.render = options.render
     opts.staticRenderFns = options.staticRenderFns
   }
+  vm._logger.info('[initInternalComponent] init vm.$options');
 }
 
 export function resolveConstructorOptions(Ctor: typeof Component) {

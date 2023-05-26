@@ -124,6 +124,7 @@ export default class Watcher implements DepTarget {
           )
       }
     }
+    vm?._logger?.debug(`[Watcher|${this.id}::Ctor] options(deep=${this.deep},user=${this.user},lazy=${this.lazy},sync=${this.sync}). expression=${this.expression}. callback=${this.cb}`);
     this.value = this.lazy ? undefined : this.get()
   }
 
@@ -131,9 +132,10 @@ export default class Watcher implements DepTarget {
    * Evaluate the getter, and re-collect dependencies.
    */
   get() {
-    pushTarget(this)
+    pushTarget(this, `Watcher|${this.id}::get`);
     let value
     const vm = this.vm
+    vm?._logger?.debug(`[Watcher|${this.id}::get] about to eval expression=${this.expression} and re-collect dependencies`);
     try {
       value = this.getter.call(vm, vm)
     } catch (e: any) {
@@ -148,8 +150,9 @@ export default class Watcher implements DepTarget {
       if (this.deep) {
         traverse(value)
       }
-      popTarget()
+      popTarget(`Watcher|${this.id}::get`)
       this.cleanupDeps()
+      vm?._logger?.debug(`[Watcher|${this.id}::get] after eval expression=${this.expression}, depIds=[${this.deps.map(it => it.id).join(',')}]`);
     }
     return value
   }
@@ -160,6 +163,7 @@ export default class Watcher implements DepTarget {
   addDep(dep: Dep) {
     const id = dep.id
     if (!this.newDepIds.has(id)) {
+      this.vm?._logger?.debug(`[Watcher|${this.id}::addDep] depId=${id}`);
       this.newDepIds.add(id)
       this.newDeps.push(dep)
       if (!this.depIds.has(id)) {
@@ -196,10 +200,13 @@ export default class Watcher implements DepTarget {
   update() {
     /* istanbul ignore else */
     if (this.lazy) {
+      this.vm?._logger?.debug(`[Watcher|${this.id}::update] a dependency changes, mark dirty`);
       this.dirty = true
     } else if (this.sync) {
+      this.vm?._logger?.debug(`[Watcher|${this.id}::update] a dependency changes, run immediately`);
       this.run()
     } else {
+      this.vm?._logger?.debug(`[Watcher|${this.id}::update] a dependency changes, queue it`);
       queueWatcher(this)
     }
   }
@@ -210,6 +217,7 @@ export default class Watcher implements DepTarget {
    */
   run() {
     if (this.active) {
+      this.vm?._logger?.debug(`[Watcher|${this.id}::run] schedule it now, about to invoke get and callback`);
       const value = this.get()
       if (
         value !== this.value ||

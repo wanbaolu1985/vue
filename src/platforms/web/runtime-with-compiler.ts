@@ -80,6 +80,7 @@ Vue.prototype.$mount = function (
       )
       options.render = render
       options.staticRenderFns = staticRenderFns
+      this._logger.debug(`[$mount] compile template to render function`);
 
       /* istanbul ignore if */
       if (__DEV__ && config.performance && mark) {

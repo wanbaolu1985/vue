@@ -17,12 +17,14 @@ import { isUpdatingChildComponent } from './lifecycle'
 import type { Component } from 'types/component'
 import { setCurrentInstance } from 'v3/currentInstance'
 import { syncSetupSlots } from 'v3/apiSetup'
+import { uid as DepUid } from 'core/observer/dep';
 
 export function initRender(vm: Component) {
   vm._vnode = null // the root of the child tree
   vm._staticTrees = null // v-once cached trees
   const options = vm.$options
   const parentVnode = (vm.$vnode = options._parentVnode!) // the placeholder node in parent tree
+  vm._logger.debug(`[initRender] init _vnode and $vnode`);
   const renderContext = parentVnode && (parentVnode.context as Component)
   vm.$slots = resolveSlots(options._renderChildren, renderContext)
   vm.$scopedSlots = parentVnode
@@ -49,6 +51,7 @@ export function initRender(vm: Component) {
 
   /* istanbul ignore else */
   if (__DEV__) {
+    vm._logger.debug(`[initRender] about to defineReactive($attrs(depId=${DepUid}))`);
     defineReactive(
       vm,
       '$attrs',
@@ -58,6 +61,7 @@ export function initRender(vm: Component) {
       },
       true
     )
+    vm._logger.debug(`[initRender] about to defineReactive($listeners(depId=${DepUid}))`);
     defineReactive(
       vm,
       '$listeners',
@@ -68,6 +72,7 @@ export function initRender(vm: Component) {
       true
     )
   } else {
+    vm._logger.debug(`[initRender] about to defineReactive($attrs(depId=${DepUid}))`);
     defineReactive(
       vm,
       '$attrs',
@@ -75,6 +80,7 @@ export function initRender(vm: Component) {
       null,
       true
     )
+    vm._logger.debug(`[initRender] about to defineReactive($listeners(depId=${DepUid}))`);
     defineReactive(
       vm,
       '$listeners',
@@ -127,7 +133,9 @@ export function renderMixin(Vue: typeof Component) {
       // when parent component is patched.
       setCurrentInstance(vm)
       currentRenderingInstance = vm
+      vm._logger.debug(`[_render] >>>>> call (h=$createElement) => { ... }`);
       vnode = render.call(vm._renderProxy, vm.$createElement)
+      vm._logger.debug(`[_render] <<<<< call (h=$createElement) => { ... }`);
     } catch (e: any) {
       handleError(e, vm, `render`)
       // return error render result,

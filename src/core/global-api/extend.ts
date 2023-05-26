@@ -4,6 +4,7 @@ import type { GlobalAPI } from 'types/global-api'
 import { defineComputed, proxy } from '../instance/state'
 import { extend, mergeOptions, validateComponentName } from '../util/index'
 import { getComponentName } from '../vdom/create-component'
+import { Logger } from 'core/util/loggerImpl2';
 
 export function initExtend(Vue: GlobalAPI) {
   /**
@@ -39,6 +40,7 @@ export function initExtend(Vue: GlobalAPI) {
     Sub.prototype.constructor = Sub
     Sub.cid = cid++
     Sub.options = mergeOptions(Super.options, extendOptions)
+    Sub.logger = new Logger({ firstTag: Sub.options.name || 'Ctor' });
     Sub['super'] = Super
 
     // For props and computed properties, we define the proxy getters on
@@ -75,6 +77,7 @@ export function initExtend(Vue: GlobalAPI) {
 
     // cache constructor
     cachedCtors[SuperId] = Sub
+    Sub.logger.info('transform component options to component ctor function(Sub.options = mergeOptions(Super.options, extendOptions))');
     return Sub
   }
 }

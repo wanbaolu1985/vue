@@ -1,7 +1,10 @@
 import { inBrowser } from './env'
+import { Logger } from 'core/util/loggerImpl2';
 
 export let mark
 export let measure
+export let plog
+export let logger
 
 if (__DEV__) {
   const perf = inBrowser && window.performance
@@ -25,4 +28,7 @@ if (__DEV__) {
       // perf.clearMeasures(name)
     }
   }
+
+  plog = console.log
+  logger = new Logger({ firstTag: 'perf' });
 }

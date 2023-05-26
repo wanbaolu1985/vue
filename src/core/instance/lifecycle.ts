@@ -1,6 +1,6 @@
 import config from '../config'
 import Watcher, { WatcherOptions } from '../observer/watcher'
-import { mark, measure } from '../util/perf'
+import { mark, measure } from '../util/perf';
 import VNode, { createEmptyVNode } from '../vdom/vnode'
 import { updateComponentListeners } from './events'
 import { resolveSlots } from './render-helpers/resolve-slots'
@@ -19,6 +19,7 @@ import {
 } from '../util/index'
 import { currentInstance, setCurrentInstance } from 'v3/currentInstance'
 import { syncSetupProxy } from 'v3/apiSetup'
+import { Logger } from 'core/util/loggerImpl2';
 
 export let activeInstance: any = null
 export let isUpdatingChildComponent: boolean = false
@@ -56,6 +57,7 @@ export function initLifecycle(vm: Component) {
   vm._isMounted = false
   vm._isDestroyed = false
   vm._isBeingDestroyed = false
+  vm._logger.debug(`[initLifecycle] init $parent/$root/$children/parent.$children`);
 }
 
 export function lifecycleMixin(Vue: typeof Component) {
@@ -69,10 +71,14 @@ export function lifecycleMixin(Vue: typeof Component) {
     // based on the rendering backend used.
     if (!prevVnode) {
       // initial render
+      vm._logger.debug(`[_update] >>>>> init __patch__ to create dom`);
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
+      vm._logger.debug(`[_update] <<<<< init __patch__ to create dom`);
     } else {
       // updates
+      vm._logger.debug(`[_update] >>>>> update __patch__ to create dom`);
       vm.$el = vm.__patch__(prevVnode, vnode)
+      vm._logger.debug(`[_update] <<<<< update __patch__ to create dom`);
     }
     restoreActiveInstance()
     // update __vue__ reference
@@ -216,6 +222,7 @@ export function mountComponent(
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  vm._logger.debug(`[mountComponent] >>>>> create renderWatcher`);
   new Watcher(
     vm,
     updateComponent,
@@ -223,6 +230,7 @@ export function mountComponent(
     watcherOptions,
     true /* isRenderWatcher */
   )
+  vm._logger.debug(`[mountComponent] <<<<< create renderWatcher`);
   hydrating = false
 
   // flush buffer for flush: "pre" watchers queued in setup()
@@ -396,8 +404,10 @@ export function callHook(
   args?: any[],
   setContext = true
 ) {
+  const logger = new Logger({ thirdTag: `hook|${hook}` }, vm._logger);
+  logger.info('>>>>>');
   // #7573 disable dep collection when invoking lifecycle hooks
-  pushTarget()
+  pushTarget(undefined, `callHook(${hook})`)
   const prev = currentInstance
   setContext && setCurrentInstance(vm)
   const handlers = vm.$options[hook]
@@ -411,5 +421,6 @@ export function callHook(
     vm.$emit('hook:' + hook)
   }
   setContext && setCurrentInstance(prev)
-  popTarget()
+  popTarget(`callHook(${hook})`)
+  logger.info('<<<<<');
 }

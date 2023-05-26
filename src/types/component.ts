@@ -5,6 +5,7 @@ import { SetupContext } from 'v3/apiSetup'
 import { ScopedSlotsData, VNodeChildren, VNodeData } from './vnode'
 import { GlobalAPI } from './global-api'
 import { EffectScope } from 'v3/reactivity/effectScope'
+import { Logger } from 'core/util/loggerImpl2';
 
 // TODO this should be using the same as /component/
 
@@ -15,6 +16,7 @@ export declare class Component {
   constructor(options?: any)
   // constructor information
   static cid: number
+  static logger: Logger
   static options: Record<string, any>
   // extend
   static extend: GlobalAPI['extend']
@@ -83,6 +85,7 @@ export declare class Component {
 
   // private properties
   _uid: number | string
+  _logger: Logger
   _name: string // this only exists in dev mode
   _isVue: true
   __v_skip: true

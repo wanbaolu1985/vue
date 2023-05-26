@@ -17,6 +17,7 @@ export function initEvents(vm: Component) {
   if (listeners) {
     updateComponentListeners(vm, listeners)
   }
+  vm._logger.debug(`[initEvents] init _events(${Object.keys(vm._events)}), $on/$off _parentListeners`);
 }
 
 let target: any

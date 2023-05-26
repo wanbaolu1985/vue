@@ -1,6 +1,6 @@
 import config from '../config'
 import Watcher from '../observer/watcher'
-import Dep, { pushTarget, popTarget } from '../observer/dep'
+import Dep, { pushTarget, popTarget, uid as DepUid } from '../observer/dep';
 import { isUpdatingChildComponent } from './lifecycle'
 import { initSetup } from 'v3/apiSetup'
 
@@ -51,21 +51,31 @@ export function proxy(target: Object, sourceKey: string, key: string) {
 
 export function initState(vm: Component) {
   const opts = vm.$options
-  if (opts.props) initProps(vm, opts.props)
+  if (opts.props) {
+    const startDepId = DepUid;
+    initProps(vm, opts.props)
+    const endDepId = DepUid;
+    vm._logger.debug(`[initProps] init _props(depsId=[${Array.from({ length: endDepId - startDepId }, (v, k) => k + startDepId)}]) and make it reactive`);
+  }
 
   // Composition API
   initSetup(vm)
 
   if (opts.methods) initMethods(vm, opts.methods)
+  const startDepId = DepUid;
   if (opts.data) {
     initData(vm)
   } else {
     const ob = observe((vm._data = {}))
     ob && ob.vmCount++
   }
+  const endDepId = DepUid;
+  vm._logger.debug(`[initData] init _data(depsId=[${Array.from({ length: endDepId - startDepId }, (v, k) => k + startDepId)}]) and observe it`);
   if (opts.computed) initComputed(vm, opts.computed)
   if (opts.watch && opts.watch !== nativeWatch) {
+    vm._logger.debug(`[initUserWatch] >>>>>`);
     initWatch(vm, opts.watch)
+    vm._logger.debug(`[initUserWatch] <<<<<`);
   }
 }
 
@@ -161,14 +171,14 @@ function initData(vm: Component) {
 
 export function getData(data: Function, vm: Component): any {
   // #7573 disable dep collection when invoking data getters
-  pushTarget()
+  pushTarget(undefined, `vm-${vm.$options.name}|${vm._uid}-getData`)
   try {
     return data.call(vm, vm)
   } catch (e: any) {
     handleError(e, vm, `data()`)
     return {}
   } finally {
-    popTarget()
+    popTarget(`vm-${vm.$options.name}|${vm._uid}-getData`)
   }
 }
 
@@ -177,6 +187,7 @@ const computedWatcherOptions = { lazy: true }
 function initComputed(vm: Component, computed: Object) {
   // $flow-disable-line
   const watchers = (vm._computedWatchers = Object.create(null))
+  vm._logger.debug(`[initComputed] init _computedWatchers`);
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
 
@@ -188,6 +199,7 @@ function initComputed(vm: Component, computed: Object) {
     }
 
     if (!isSSR) {
+      vm._logger.debug(`[initComputed] init _computedWatchers[${key}]`);
       // create internal watcher for the computed property.
       watchers[key] = new Watcher(
         vm,
@@ -301,6 +313,7 @@ function initMethods(vm: Component, methods: Object) {
     }
     vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm)
   }
+  vm._logger.debug(`[initMethods]`);
 }
 
 function initWatch(vm: Component, watch: Object) {
@@ -376,9 +389,9 @@ export function stateMixin(Vue: typeof Component) {
     const watcher = new Watcher(vm, expOrFn, cb, options)
     if (options.immediate) {
       const info = `callback for immediate watcher "${watcher.expression}"`
-      pushTarget()
+      pushTarget(undefined, `watchImmediate|${watcher.id}`)
       invokeWithErrorHandling(cb, vm, [watcher.value], vm, info)
-      popTarget()
+      popTarget(`watchImmediate|${watcher.id}`)
     }
     return function unwatchFn() {
       watcher.teardown()

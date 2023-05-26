@@ -16,6 +16,7 @@ import {
   noop
 } from '../util/index'
 import { isReadonly, isRef, TrackOpTypes, TriggerOpTypes } from '../../v3'
+import { gLogger } from 'core/util/loggerImpl2';
 
 const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
 
@@ -52,6 +53,7 @@ export class Observer {
   constructor(public value: any, public shallow = false, public mock = false) {
     // this.value = value
     this.dep = mock ? mockDep : new Dep()
+    gLogger.verbose(`[Observer::Ctor] depId=${this.dep.id}, shallow=${shallow}`);
     this.vmCount = 0
     def(value, '__ob__', this)
     if (isArray(value)) {
@@ -134,6 +136,7 @@ export function defineReactive(
   mock?: boolean
 ) {
   const dep = new Dep()
+  gLogger.verbose(`[defineReactive] key=${key}, depId=${dep.id}, shallow=${shallow}`);
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
   if (property && property.configurable === false) {
@@ -155,31 +158,37 @@ export function defineReactive(
     enumerable: true,
     configurable: true,
     get: function reactiveGetter() {
-      const value = getter ? getter.call(obj) : val
-      if (Dep.target) {
-        if (__DEV__) {
-          dep.depend({
-            target: obj,
-            type: TrackOpTypes.GET,
-            key
-          })
-        } else {
-          dep.depend()
-        }
-        if (childOb) {
-          childOb.dep.depend()
-          if (isArray(value)) {
-            dependArray(value)
+      gLogger.verbose(`[reactiveGetter] >>>>> key=${key}, depId=${dep.id}`);
+      try {
+        const value = getter ? getter.call(obj) : val;
+        if (Dep.target) {
+          if (__DEV__) {
+            dep.depend({
+              target: obj,
+              type: TrackOpTypes.GET,
+              key
+            });
+          } else {
+            dep.depend();
+          }
+          if (childOb) {
+            childOb.dep.depend();
+            if (isArray(value)) {
+              dependArray(value);
+            }
           }
         }
+        return isRef(value) && !shallow ? value.value : value;
+      } finally {
+        gLogger.verbose(`[reactiveGetter] <<<<< key=${key}, depId=${dep.id}`);
       }
-      return isRef(value) && !shallow ? value.value : value
     },
     set: function reactiveSetter(newVal) {
       const value = getter ? getter.call(obj) : val
       if (!hasChanged(value, newVal)) {
         return
       }
+      gLogger.verbose(`[reactiveSetter] key=${key}, depId=${dep.id}`);
       if (__DEV__ && customSetter) {
         customSetter()
       }
