@@ -3,28 +3,28 @@ var data = {
   name: 'My Tree',
   children: [
     { name: 'hello' },
-    { name: 'wat' },
-    {
-      name: 'child folder',
-      children: [
-        {
-          name: 'child folder',
-          children: [
-            { name: 'hello' },
-            { name: 'wat' }
-          ]
-        },
-        { name: 'hello' },
-        { name: 'wat' },
-        {
-          name: 'child folder',
-          children: [
-            { name: 'hello' },
-            { name: 'wat' }
-          ]
-        }
-      ]
-    }
+    // { name: 'wat' },
+    // {
+    //   name: 'child folder',
+    //   children: [
+    //     // {
+    //     //   name: 'child folder',
+    //     //   children: [
+    //     //     { name: 'hello' },
+    //     //     { name: 'wat' }
+    //     //   ]
+    //     // },
+    //     { name: 'hello' },
+    //     { name: 'wat' },
+    //     // {
+    //     //   name: 'child folder',
+    //     //   children: [
+    //     //     { name: 'hello' },
+    //     //     { name: 'wat' }
+    //     //   ]
+    //     // }
+    //   ]
+    // }
   ]
 }
 
@@ -43,7 +43,15 @@ Vue.component('item', {
     isFolder: function () {
       return this.model.children &&
         this.model.children.length
-    }
+    },
+    isFolderOpen: function () {
+      return this.isFolder && this.open;
+    },
+  },
+  watch: {
+    isFolderOpen(val) {
+      console.log('isFolderOpen =',val);
+    },
   },
   methods: {
     toggle: function () {
@@ -68,6 +76,7 @@ Vue.component('item', {
 
 // boot up the demo
 var demo = new Vue({
+  name: 'App',
   el: '#demo',
   data: {
     treeData: data
